@@ -1,4 +1,65 @@
-### Introduction
+## Caching Matrix Inverse in R
+
+This repository provides two R functions that compute and **cache** the inverse of a matrix, avoiding redundant computation when the same matrix inverse is needed multiple times (e.g. inside a loop).
+
+### How It Works
+
+Matrix inversion via `solve()` can be expensive for large matrices. By wrapping a matrix in a `makeCacheMatrix` object, the computed inverse is stored in its environment. Subsequent calls to `cacheSolve()` retrieve the cached result instead of recomputing it.
+
+### Functions
+
+#### `makeCacheMatrix(x)`
+
+Creates a special "cache-aware" matrix object. `x` must be a **square** matrix.
+
+Returns a list with four functions:
+
+| Function | Description |
+|----------|-------------|
+| `set(y)` | Replace the stored matrix with `y` (clears the cache) |
+| `get()` | Return the stored matrix |
+| `setinverse(inv)` | Store `inv` as the cached inverse |
+| `getinverse()` | Return the cached inverse (`NULL` if not yet computed) |
+
+#### `cacheSolve(x, ...)`
+
+Returns the inverse of the matrix stored in the `makeCacheMatrix` object `x`.
+
+- If the inverse is already cached, prints `"getting cached data"` and returns it immediately.
+- Otherwise, computes the inverse with `solve()`, caches it, and returns it.
+- Raises an informative error if the matrix is singular (non-invertible).
+
+### Usage Example
+
+```r
+source("cachematrix.R")
+
+m <- matrix(c(4, 3, 3, 2), 2, 2)   # invertible 2x2 matrix
+cm <- makeCacheMatrix(m)
+
+# First call: computes and caches the inverse
+inv <- cacheSolve(cm)
+
+# Second call: retrieves from cache (prints "getting cached data")
+inv <- cacheSolve(cm)
+
+# Verify: m %*% inv should equal the identity matrix
+m %*% inv
+
+# Update the matrix (cache is cleared automatically)
+cm$set(matrix(c(1, 2, 3, 4), 2, 2))
+cacheSolve(cm)   # recomputes for the new matrix
+```
+
+### Running Tests
+
+```r
+source("test_cachematrix.R")
+```
+
+---
+
+### Background
 
 This second programming assignment will require you to write an R
 function that is able to cache potentially time-consuming computations.
